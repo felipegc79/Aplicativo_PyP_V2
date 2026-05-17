@@ -4,6 +4,10 @@
   "description": "Prototipo Actas de Visita en React",
   "proxy": "http://localhost:3001",
   "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "localforage": "^1.10.0",
@@ -17,9 +21,13 @@
   "scripts": {
     "start": "node node_modules/react-scripts/scripts/start.js",
     "build": "node node_modules/react-scripts/scripts/build.js",
+    "build:mobile": "npm run build && npx cap sync",
+    "mobile:android": "npx cap open android",
+    "mobile:ios": "npx cap open ios",
     "test": "node node_modules/react-scripts/scripts/test.js",
     "eject": "node node_modules/react-scripts/scripts/eject.js"
   },
+
   "browserslist": {
     "production": [
       ">0.2%",

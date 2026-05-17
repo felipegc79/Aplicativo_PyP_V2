@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tikka Gestion PyP</string>
+    <string name="title_activity_main">Tikka Gestion PyP</string>
+    <string name="package_name">com.tikkaconsultores.gestionpyp</string>
+    <string name="custom_url_scheme">com.tikkaconsultores.gestionpyp</string>
+</resources>
