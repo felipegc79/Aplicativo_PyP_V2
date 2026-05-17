@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1778857859395,
+    "username": "desarrollo",
+    "password": "123456",
+    "name": "Luis Felipe Gutierrez Cardenas",
+    "role": "Administrador del sistema",
+    "email": "desarrollo@tikkaconsultores.com",
+    "identificacion": "75107525",
+    "telefono": "3153309222",
+    "approved": 1
+  },
+  {
+    "id": 1778973562742,
+    "username": "camilagarcia06",
+    "password": "123456",
+    "name": "Camila Garcia",
+    "role": "Lider de prevencion",
+    "email": "camilagarcia06@gmail.com",
+    "identificacion": "1053800881",
+    "telefono": "3112206060",
+    "approved": 1
+  }
+]

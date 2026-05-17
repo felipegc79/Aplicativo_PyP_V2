@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>T'IKKA - Plataforma de Gestión</title>
+    <!-- 
+      Importar Tailwind CSS CDN para que funcione en CodeSandbox
+      sin archivos de configuración.
+    -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Outfit', 'sans-serif'],
+            },
+            colors: {
+              tikka: {
+                blue: '#2D3380',    // Azul Tikka
+                green: '#00BFA5',   // Verde/Teal Tikka
+                dark: '#1A1A1A',    // Negro para textos
+                light: '#E6FFFA',   // Fondo muy claro
+              }
+            },
+            backgroundImage: {
+              'tikka-gradient': 'linear-gradient(135deg, #2D3380 0%, #00BFA5 100%)',
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-gray-100">
+    <noscript>Necesitas habilitar JavaScript para correr esta app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
