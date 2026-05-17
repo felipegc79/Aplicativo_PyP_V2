@@ -62,9 +62,9 @@ app.post("/api/register", (req, res) => {
 
   // Enviar correo
   const mailOptions = {
-    from: '"SaaS ADA Notificaciones" <desarrollo@tikkaconsultores.com>',
+    from: '"Tikka Gestión PyP Notificaciones" <desarrollo@tikkaconsultores.com>',
     to: "desarrollo@tikkaconsultores.com",
-    subject: "Nuevo Registro de Usuario - SaaS ADA",
+    subject: "Nuevo Registro de Usuario - Tikka Gestión PyP",
     text: `Un nuevo usuario se ha registrado y requiere aprobación.\n\nNombre: ${name}\nUsuario: ${username}\nRol Solicitado: ${role}\nEmail: ${email}\n\nPor favor, ingresa al sistema para aprobar este usuario.`,
   };
 
@@ -104,12 +104,12 @@ app.post("/api/approve", (req, res) => {
   let emailSent = false;
   if (user.email) {
     const userMail = {
-      from: '"SaaS ADA Notificaciones" <desarrollo@tikkaconsultores.com>',
+      from: '"Tikka Gestión PyP Notificaciones" <desarrollo@tikkaconsultores.com>',
       to: user.email,
-      subject: "Acceso aprobado - SaaS ADA",
+      subject: "Acceso aprobado - Tikka Gestión PyP",
       text:
         `Hola ${user.name},\n\n` +
-        `Le informamos que el Administrador del sistema ha aprobado su solicitud de acceso a SaaS ADA.\n\n` +
+        `Le informamos que el Administrador del sistema ha aprobado su solicitud de acceso a Tikka Gestión PyP.\n\n` +
         `Usuario: ${user.username}\n` +
         `Rol asignado: ${user.role}\n\n` +
         `Ya puede iniciar sesión en el sistema con sus credenciales.\n\n` +
