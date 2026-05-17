@@ -2084,8 +2084,8 @@ const DirectorDashboard = ({
   return (
     <AppLayout title="Director de Prevención" onNavigate={null}>
       <div className="flex flex-col md:flex-row min-h-[calc(100vh-80px)] bg-gray-50">
-        <aside className="w-full md:w-64 flex-shrink-0 shadow-2xl border-r border-white/10" style={{ background: 'linear-gradient(180deg, #2D3380 0%, #00BFA5 100%)' }}>
-          <div className="p-8 border-b border-white/10">
+        <aside className="w-full md:w-64 flex-shrink-0 shadow-2xl border-b md:border-r md:border-b-0 border-white/10" style={{ background: 'linear-gradient(135deg, #2D3380 0%, #00BFA5 100%)' }}>
+          <div className="hidden md:block p-8 border-b border-white/10">
             <div className="flex items-center gap-4 mb-1">
               <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center font-black text-xl shadow-inner border border-white/20">
                 {user?.name?.charAt(0) || "D"}
@@ -2100,23 +2100,29 @@ const DirectorDashboard = ({
               </div>
             </div>
           </div>
-          <nav className="p-4 space-y-3">
+          <nav className="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible p-3 md:p-4 gap-2 md:gap-0 md:space-y-3 scrollbar-none">
             {menuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveModule(item.id)}
-                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold text-left transition-all duration-300 ${
+                className={`flex-shrink-0 md:w-full flex items-center gap-2 md:gap-4 px-4 py-2.5 md:px-5 md:py-4 rounded-xl md:rounded-2xl text-xs md:text-sm font-bold text-left transition-all duration-300 ${
                   activeModule === item.id
-                    ? "bg-white text-tikka-blue shadow-2xl scale-105 border-r-4 border-tikka-green"
+                    ? "bg-white text-tikka-blue shadow-2xl scale-105 border-b-2 md:border-b-0 md:border-r-4 border-tikka-green"
                     : "text-white/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
-                {item.label}
+                <span className="whitespace-nowrap">{item.label}</span>
               </button>
             ))}
+            <button
+              onClick={onLogout}
+              className="md:hidden flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-white/10 text-white rounded-xl text-xs font-black hover:bg-red-500/20 hover:text-red-100 transition-all border border-white/10"
+            >
+              <span>🚪</span> Salir
+            </button>
           </nav>
-          <div className="p-6 mt-auto border-t border-white/10">
+          <div className="hidden md:block p-6 mt-auto border-t border-white/10">
             <button
               onClick={onLogout}
               className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-white/10 text-white rounded-2xl text-xs font-black hover:bg-red-500/20 hover:text-red-100 transition-all border border-white/10"
@@ -2125,6 +2131,7 @@ const DirectorDashboard = ({
             </button>
           </div>
         </aside>
+
         <main className="flex-1 p-6 md:p-10 overflow-y-auto max-h-[calc(100vh-80px)]">
           {renderContent()}
         </main>

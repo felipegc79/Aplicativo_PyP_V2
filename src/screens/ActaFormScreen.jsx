@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import AppLayout from "../components/AppLayout";
 import {
   FormSection,
@@ -269,7 +269,7 @@ const ActaFormScreen = ({
 
           <FormSection title="4. Evidencias">
               <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-                ðŸ“Ž Adjuntar Evidencias (Ilimitado)
+                📎 Adjuntar Evidencias
               </label>
               <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-100 transition-colors cursor-pointer relative">
                 <input
@@ -280,7 +280,7 @@ const ActaFormScreen = ({
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
                 <div className="text-gray-500">
-                  <p className="text-3xl mb-2">ðŸ“‚</p>
+                  <p className="text-3xl mb-2">📁</p>
                   <p className="text-sm font-bold">
                     Toque aquí para subir archivos
                   </p>
@@ -429,7 +429,7 @@ const ActaFormScreen = ({
               />
               <div className="md:col-span-2">
                 <FormInput
-                  label="NÃšMERO LICENCIA Y FECHA DE EXPEDICIÓN"
+                  label="NÚMERO LICENCIA Y FECHA DE EXPEDICIÓN"
                   name="licencia"
                   value={formData.licencia}
                   readOnly

@@ -128,7 +128,7 @@ const ActaPreview = ({
                         key={i}
                         className="flex items-start gap-2 text-gray-700 text-xs bg-gray-50 p-2 rounded"
                       >
-                        <span className="text-lg">ðŸ“Ž</span>
+                        <span className="text-lg">📎</span>
                         <div className="flex flex-col">
                           <span className="font-bold break-all">{e.name}</span>
                           <span className="text-[10px] text-gray-500 uppercase font-semibold">
