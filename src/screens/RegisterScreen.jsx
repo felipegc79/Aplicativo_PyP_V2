@@ -34,9 +34,9 @@ const RegisterScreen = ({ onRegisterSuccess, onCancel, showModal }) => {
 
     const autoUser = formData.email.split("@")[0];
     const autoPass = "123456";
-
     try {
-      const response = await fetch("/api/register", {
+      const apiBase = window.Capacitor ? "https://tikka-gestion-pyp.vercel.app" : "";
+      const response = await fetch(`${apiBase}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

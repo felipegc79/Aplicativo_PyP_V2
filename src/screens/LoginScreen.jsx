@@ -16,9 +16,9 @@ const LoginScreen = ({ users, onLoginSuccess, onGoToRegister }) => {
       setError("Por favor ingrese usuario y contraseña.");
       return;
     }
-
     try {
-      const response = await fetch("/api/login", {
+      const apiBase = window.Capacitor ? "https://tikka-gestion-pyp.vercel.app" : "";
+      const response = await fetch(`${apiBase}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })

@@ -1775,10 +1775,11 @@ const UsuariosModule = ({ showModal, currentUser }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRoles, setSelectedRoles] = useState({});
+  const apiBase = window.Capacitor ? "https://tikka-gestion-pyp.vercel.app" : "";
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/users");
+      const response = await fetch(`${apiBase}/api/users`);
       const data = await response.json();
       setUsers(data.users || []);
     } catch (err) {
@@ -1804,7 +1805,7 @@ const UsuariosModule = ({ showModal, currentUser }) => {
     }
 
     try {
-      const response = await fetch("/api/approve", {
+      const response = await fetch(`${apiBase}/api/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, role }),
@@ -1833,7 +1834,7 @@ const UsuariosModule = ({ showModal, currentUser }) => {
       return;
     }
     try {
-      const response = await fetch("/api/approve", {
+      const response = await fetch(`${apiBase}/api/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, role }),
@@ -1871,7 +1872,7 @@ const UsuariosModule = ({ showModal, currentUser }) => {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`${apiBase}/api/users/${userId}`, {
         method: "DELETE",
       });
       const data = await response.json().catch(() => ({}));
