@@ -8,11 +8,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const dbPath = path.join(__dirname, "users.json");
+const isVercel = !!process.env.VERCEL;
+const dbPath = isVercel
+  ? "/tmp/users.json"
+  : path.join(__dirname, "users.json");
 
-// Inicializar DB JSON (Vacía para permitir el auto-registro del primer Admin)
+// Inicializar DB JSON (En Vercel copiamos la pre-existente con los usuarios semilla)
 if (!fs.existsSync(dbPath)) {
-  fs.writeFileSync(dbPath, JSON.stringify([], null, 2));
+  const srcPath = path.join(__dirname, "users.json");
+  if (isVercel && fs.existsSync(srcPath)) {
+    try {
+      fs.copyFileSync(srcPath, dbPath);
+    } catch (e) {
+      console.error("Error al copiar users.json a /tmp:", e);
+      fs.writeFileSync(dbPath, JSON.stringify([], null, 2));
+    }
+  } else {
+    try {
+      fs.writeFileSync(dbPath, JSON.stringify([], null, 2));
+    } catch (e) {
+      console.error("Error al inicializar users.json:", e);
+    }
+  }
 }
 
 const getUsers = () => JSON.parse(fs.readFileSync(dbPath));
