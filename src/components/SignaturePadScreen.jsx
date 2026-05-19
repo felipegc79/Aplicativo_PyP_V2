@@ -30,8 +30,10 @@ const SignaturePadScreen = ({
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
 
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    const width = rect.width || canvas.clientWidth || 300;
+    const height = rect.height || canvas.clientHeight || 200;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
 
     const ctx = canvas.getContext("2d");
     ctx.scale(dpr, dpr);
@@ -47,6 +49,9 @@ const SignaturePadScreen = ({
       if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
       } else {
         clientX = e.clientX;
         clientY = e.clientY;
@@ -58,6 +63,7 @@ const SignaturePadScreen = ({
     };
 
     const startDrawing = (e) => {
+      if (e.cancelable) e.preventDefault();
       isDrawingRef.current = true;
       const { offsetX, offsetY } = getCoords(e);
       ctxRef.current.beginPath();
@@ -66,15 +72,19 @@ const SignaturePadScreen = ({
 
     const draw = (e) => {
       if (!isDrawingRef.current) return;
+      if (e.cancelable) e.preventDefault();
       const { offsetX, offsetY } = getCoords(e);
       ctxRef.current.lineTo(offsetX, offsetY);
       ctxRef.current.stroke();
       setIsSigned(true);
     };
 
-    const stopDrawing = () => {
+    const stopDrawing = (e) => {
+      if (e && e.cancelable) e.preventDefault();
       isDrawingRef.current = false;
-      ctxRef.current.closePath();
+      if (ctxRef.current) {
+        ctxRef.current.closePath();
+      }
     };
 
     canvas.addEventListener("mousedown", startDrawing);
@@ -129,21 +139,23 @@ const SignaturePadScreen = ({
       second: "2-digit",
       hour12: true,
     });
-
     showModal("Procesando...", "Generando Código QR Seguro...");
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = `${position.coords.latitude.toFixed(
-          5
-        )}, ${position.coords.longitude.toFixed(5)}`;
-        saveProcess(timestamp, coords);
-      },
-      (error) => {
-        console.warn("Error Geo:", error);
-        saveProcess(timestamp, "Ubicación no disponible");
-      }
-    );
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = `${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`;
+          saveProcess(timestamp, coords);
+        },
+        (error) => {
+          console.warn("Error Geo:", error);
+          saveProcess(timestamp, "Ubicación no disponible");
+        },
+        { timeout: 3000, enableHighAccuracy: false, maximumAge: 60000 }
+      );
+    } else {
+      saveProcess(timestamp, "Ubicación no soportada");
+    }
   };
 
   const saveProcess = (timestamp, geolocation) => {

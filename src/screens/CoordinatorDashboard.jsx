@@ -131,7 +131,6 @@ const PieChart = ({ data }) => {
 };
 
 // --- MÓDULOS ESPECÍFICOS ---
-
 const DashboardModule = ({ sdsData }) => {
   const [filters, setFilters] = useState({
     sds: "",
@@ -143,12 +142,12 @@ const DashboardModule = ({ sdsData }) => {
     departamento: "",
     ciudad: "",
   });
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const uniqueClients = [...new Set(sdsData.map((d) => d.Cliente))].sort();
   const uniqueProvs = [...new Set(sdsData.map((d) => d.Proveedor))].sort();
   const uniqueProgs = [...new Set(sdsData.map((d) => d.Programa))].sort();
   const uniqueTypes = [...new Set(sdsData.map((d) => d.TipoActividad))].sort();
   const uniqueDeptos = [...new Set(sdsData.map((d) => d.Departamento))].sort();
-
   const uniqueCities = useMemo(() => {
     const data = filters.departamento
       ? sdsData.filter(d => d.Departamento === filters.departamento)
@@ -218,11 +217,18 @@ const DashboardModule = ({ sdsData }) => {
     if (!input) return;
     html2canvas(input, { scale: 2, useCORS: true }).then(canvas => {
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Coordinator_Report_${new Date().getTime()}.pdf`);
+      if (window.Capacitor) {
+        setPdfPreviewUrl(imgData);
+      } else {
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Coordinator_Report_${new Date().getTime()}.pdf`);
+      }
+    }).catch(err => {
+      console.error("PDF Export Error:", err);
+      alert("Error al generar PDF.");
     });
   };
 
@@ -359,6 +365,38 @@ const DashboardModule = ({ sdsData }) => {
         </div>
       </div>
       </div>
+
+      {pdfPreviewUrl && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl flex flex-col gap-4 max-h-[90vh]">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="font-bold text-tikka-blue text-base uppercase">Reporte Generado</h3>
+              <button 
+                onClick={() => setPdfPreviewUrl(null)}
+                className="text-gray-400 hover:text-gray-600 font-bold text-xl px-2"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 text-center">
+              Para compartirlo o guardarlo en su celular, puede tomar una captura de pantalla o mantener presionada la imagen para guardarla.
+            </p>
+            <div className="overflow-y-auto border border-gray-100 rounded-xl bg-gray-50 flex-1 flex items-center justify-center p-2">
+              <img 
+                src={pdfPreviewUrl} 
+                alt="Reporte Generado" 
+                className="max-w-full max-h-[60vh] object-contain shadow-md rounded"
+              />
+            </div>
+            <button
+              onClick={() => setPdfPreviewUrl(null)}
+              className="w-full py-3 bg-tikka-blue text-white rounded-xl font-bold uppercase text-xs tracking-widest"
+            >
+              Cerrar Vista Previa
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -30,7 +30,17 @@ const ActaPreview = ({
   const SignatureBlock = ({ title, data, color }) => {
     if (!data) return null;
     return (
-      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex flex-row items-center gap-4">
+      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+        {data.signatureImage && (
+          <div className="flex-shrink-0 border-b sm:border-b-0 sm:border-r pb-4 sm:pb-0 sm:pr-4 border-gray-100 flex flex-col items-center">
+            <span className="text-[10px] text-gray-400 font-bold uppercase mb-1">Trazo Capturado</span>
+            <img
+              src={data.signatureImage}
+              alt="Firma Manuscrita"
+              className="w-32 h-16 object-contain bg-gray-50 rounded border border-gray-100"
+            />
+          </div>
+        )}
         <div className="flex-shrink-0">
           <img
             src={data.qrUrl || "https://placehold.co/100x100?text=QR"}
@@ -74,13 +84,13 @@ const ActaPreview = ({
         <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none overflow-hidden mix-blend-multiply opacity-15">
           <div className="transform -rotate-45">
             <p className="text-6xl font-black text-gray-800 whitespace-nowrap mb-32">
-              SISTEMA ADA
+              SISTEMA TIKKA
             </p>
             <p className="text-6xl font-black text-gray-800 whitespace-nowrap mb-32">
               BORRADOR - NO VÁLIDO
             </p>
             <p className="text-6xl font-black text-gray-800 whitespace-nowrap">
-              SISTEMA ADA
+              SISTEMA TIKKA
             </p>
           </div>
         </div>
