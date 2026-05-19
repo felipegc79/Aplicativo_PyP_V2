@@ -262,52 +262,54 @@ const SimpleBarChart = ({ data }) => {
 };
 
 // --- COMPONENTE CILINDRO 3D ---
-const CylinderBar = ({ percent, color }) => (
-  <div className="relative w-8 mx-auto h-full flex flex-col justify-end group">
-    <div className="relative w-full transition-all duration-1000 ease-out" style={{ height: `${percent}%` }}>
-      {/* Top Cap */}
-      <div 
-        className="absolute top-[-6px] left-0 w-full h-[12px] rounded-[100%] z-20 shadow-inner" 
-        style={{ backgroundColor: color, filter: 'brightness(1.3)' }}
-      ></div>
-      {/* Body with linear gradient for 3D effect */}
-      <div 
-        className="w-full h-full relative z-10" 
-        style={{ 
-          background: `linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.2) 100%), ${color}` 
-        }}
-      ></div>
-      {/* Bottom Cap */}
-      <div 
-        className="absolute bottom-[-6px] left-0 w-full h-[12px] rounded-[100%] z-0" 
-        style={{ backgroundColor: color, filter: 'brightness(0.7)' }}
-      ></div>
-      
-      {/* Tooltip on hover */}
-      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-tikka-dark text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30 pointer-events-none font-bold">
-        {Math.round(percent)}%
+const CylinderBar = ({ percent, color, value }) => {
+  const [active, setActive] = useState(false);
+  return (
+    <div 
+      className="relative w-full mx-auto h-full flex flex-col justify-end group cursor-pointer"
+      onClick={() => setActive(!active)}
+      onMouseEnter={() => setActive(true)}
+      onMouseLeave={() => setActive(false)}
+    >
+      <div className="relative w-full transition-all duration-1000 ease-out animate-fade-in" style={{ height: `${percent}%` }}>
+        {/* Top Cap */}
+        <div className="absolute top-[-6px] left-0 w-full h-[12px] rounded-[100%] z-20 shadow-inner" style={{ backgroundColor: color, filter: 'brightness(1.3)' }}></div>
+        {/* Body with linear gradient for 3D effect */}
+        <div className="w-full h-full relative z-10" style={{ background: `linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.2) 100%), ${color}` }}></div>
+        {/* Bottom Cap */}
+        <div className="absolute bottom-[-6px] left-0 w-full h-[12px] rounded-[100%] z-0" style={{ backgroundColor: color, filter: 'brightness(0.7)' }}></div>
+        
+        {/* Tooltip */}
+        <div className={`absolute -top-12 left-1/2 -translate-x-1/2 bg-tikka-dark text-white text-xs py-1.5 px-3 rounded-lg shadow-xl transition-all duration-200 whitespace-nowrap z-30 font-black tracking-wider uppercase border border-white/20 ${active ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-2 scale-95 pointer-events-none'}`}>
+          Cantidad: {value}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const VerticalBarChart = ({ data }) => {
-  if (data.length === 0)
-    return <p className="text-xs text-gray-400 py-4 text-center">Sin datos.</p>;
-  const maxVal = Math.max(...data.map((d) => d.value));
+  if (!data || data.length === 0) return <p className="text-xs text-gray-400 py-4 text-center">Sin datos.</p>;
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="h-64 flex items-end justify-around gap-4 mt-8 px-4 bg-gray-50/50 rounded-xl border border-gray-100 py-6">
-      {data.map((item, idx) => (
-        <div key={idx} className="flex flex-col items-center h-full w-12">
-          <CylinderBar percent={(item.value / maxVal) * 100} color="#2D3380" />
-          <span className="text-[10px] text-tikka-dark mt-4 font-bold text-center truncate w-full" title={item.label}>
-            {item.label}
-          </span>
-          <span className="text-[11px] font-black text-tikka-blue">
-            {item.value}
-          </span>
-        </div>
-      ))}
+    <div className="w-full overflow-x-auto py-2 scrollbar-thin">
+      <div className="h-72 flex items-end justify-around gap-2 mt-4 px-4 bg-gray-50/50 rounded-xl border border-gray-100 py-6 min-w-max">
+        {data.map((item, idx) => {
+          const color = idx % 2 === 0 ? "#2D3380" : "#10B981"; // azul y verde
+          return (
+            <div key={idx} className="flex flex-col items-center h-full w-20 md:w-24 px-1 flex-shrink-0">
+              <CylinderBar percent={(item.value / maxVal) * 100} color={color} value={item.value} />
+              <span 
+                className="text-[9px] md:text-[10px] text-tikka-dark mt-4 font-black text-center break-words w-full leading-tight min-h-[32px] flex items-center justify-center" 
+                title={item.label}
+              >
+                {item.label}
+              </span>
+              <span className="text-[11px] font-black text-tikka-blue mt-1">{item.value}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -1408,8 +1410,9 @@ const AsignarSDSModule = ({ sdsData, asesores, onSaveAssignments }) => {
   );
 };
 
-// --- MÓDULO LISTADO DE SDS (con exportación a Excel/CSV) ---
 const ListadoSdsModule = ({ sdsData }) => {
+  const [excelPreviewCsv, setExcelPreviewCsv] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [filters, setFilters] = useState({
     sds: "",
     cliente: "",
@@ -1520,25 +1523,30 @@ const ListadoSdsModule = ({ sdsData }) => {
     // BOM UTF-8 para que Excel respete tildes/eñes
     const csv = "\uFEFF" + [headerLine, ...rows].join("\r\n");
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    const ts = new Date()
-      .toISOString()
-      .replace(/[:.]/g, "-")
-      .slice(0, 19);
-    link.href = url;
-    link.download = `Listado_SDS_${ts}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    if (window.Capacitor) {
+      setExcelPreviewCsv(csv);
+      setCopied(false);
+    } else {
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const ts = new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")
+        .slice(0, 19);
+      link.href = url;
+      link.download = `Listado_Actas_${ts}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
   };
 
   return (
     <div className="space-y-4 animate-fade-in pb-10">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b pb-2">
-        <h2 className="text-xl font-bold text-tikka-dark">Listado de SDS</h2>
+        <h2 className="text-xl font-bold text-tikka-dark">Listado de Actas</h2>
         <button
           onClick={exportToExcel}
           style={{ backgroundColor: "#107C41", color: "#ffffff" }}
@@ -1679,9 +1687,89 @@ const ListadoSdsModule = ({ sdsData }) => {
           </table>
         </div>
       </div>
+
+      {excelPreviewCsv && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl flex flex-col gap-4 max-h-[90vh]">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-tikka-dark text-base uppercase">Excel Exportado (CSV)</h3>
+              </div>
+              <button 
+                onClick={() => setExcelPreviewCsv(null)}
+                className="text-gray-400 hover:text-gray-600 font-bold text-xl px-2"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 leading-relaxed flex gap-2">
+              <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                Los navegadores móviles bloquean las descargas de archivos locales directas. 
+                Use el botón de abajo para <strong>Copiar todos los datos</strong> e importarlos en su app de Excel, Google Sheets, Numbers o Notas en su celular de inmediato.
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden flex flex-col gap-1 border border-gray-100 rounded-xl bg-gray-50 p-2">
+              <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold px-1 mb-1">
+                <span>VISTA PREVIA DE LOS DATOS ({filteredData.length} FILAS)</span>
+                <span>DELIMITADOR: PUNTO Y COMA (;)</span>
+              </div>
+              <textarea 
+                readOnly
+                value={excelPreviewCsv} 
+                className="w-full flex-1 p-3 bg-white border border-gray-200 rounded-lg font-mono text-[9px] text-gray-600 resize-none focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(excelPreviewCsv);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 3000);
+                }}
+                className={`w-full py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shadow-md ${copied ? 'bg-green-600 text-white' : 'bg-tikka-green text-white hover:bg-tikka-gradient active:scale-95'}`}
+              >
+                {copied ? (
+                  <>
+                    <svg className="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                    ¡Copiado al Portapapeles!
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Copiar Datos a Excel
+                  </>
+                )}
+              </button>
+              
+              <button
+                onClick={() => setExcelPreviewCsv(null)}
+                className="w-full py-2.5 bg-gray-100 text-gray-500 rounded-xl font-bold text-xs uppercase hover:bg-gray-200"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 
 const CargarExcelModule = ({ onResetData, showModal }) => {
   const fileInputRef = useRef(null);
@@ -2079,7 +2167,7 @@ const DirectorDashboard = ({
     { id: "tableros", label: "Tableros de Control", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> },
     { id: "usuarios", label: "Aprobar Usuarios", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> },
     { id: "gestion", label: "Gestión de Actas", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> },
-    { id: "listadoSds", label: "Listado de SDS", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"></path></svg> },
+    { id: "listadoSds", label: "Listado de Actas", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"></path></svg> },
     { id: "crearAsesor", label: "Crear Asesor Prevención", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg> },
     { id: "asignar", label: "Asignar SDS", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> },
     { id: "cargar", label: "Cargar Excel a B.D.", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> },

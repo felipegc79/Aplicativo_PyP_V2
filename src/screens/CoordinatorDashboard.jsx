@@ -65,31 +65,54 @@ const SimpleBarChart = ({ data }) => {
 };
 
 // --- COMPONENTE CILINDRO 3D ---
-const CylinderBar = ({ percent, color }) => (
-  <div className="relative w-8 mx-auto h-full flex flex-col justify-end group">
-    <div className="relative w-full transition-all duration-1000 ease-out" style={{ height: `${percent}%` }}>
-      <div className="absolute top-[-6px] left-0 w-full h-[12px] rounded-[100%] z-20 shadow-inner" style={{ backgroundColor: color, filter: 'brightness(1.3)' }}></div>
-      <div className="w-full h-full relative z-10" style={{ background: `linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.2) 100%), ${color}` }}></div>
-      <div className="absolute bottom-[-6px] left-0 w-full h-[12px] rounded-[100%] z-0" style={{ backgroundColor: color, filter: 'brightness(0.7)' }}></div>
-      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-tikka-dark text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30 pointer-events-none font-bold">
-        {Math.round(percent)}%
+const CylinderBar = ({ percent, color, value }) => {
+  const [active, setActive] = useState(false);
+  return (
+    <div 
+      className="relative w-full mx-auto h-full flex flex-col justify-end group cursor-pointer"
+      onClick={() => setActive(!active)}
+      onMouseEnter={() => setActive(true)}
+      onMouseLeave={() => setActive(false)}
+    >
+      <div className="relative w-full transition-all duration-1000 ease-out animate-fade-in" style={{ height: `${percent}%` }}>
+        {/* Top Cap */}
+        <div className="absolute top-[-6px] left-0 w-full h-[12px] rounded-[100%] z-20 shadow-inner" style={{ backgroundColor: color, filter: 'brightness(1.3)' }}></div>
+        {/* Body with linear gradient for 3D effect */}
+        <div className="w-full h-full relative z-10" style={{ background: `linear-gradient(90deg, rgba(0,0,0,0.2) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.2) 100%), ${color}` }}></div>
+        {/* Bottom Cap */}
+        <div className="absolute bottom-[-6px] left-0 w-full h-[12px] rounded-[100%] z-0" style={{ backgroundColor: color, filter: 'brightness(0.7)' }}></div>
+        
+        {/* Tooltip */}
+        <div className={`absolute -top-12 left-1/2 -translate-x-1/2 bg-tikka-dark text-white text-xs py-1.5 px-3 rounded-lg shadow-xl transition-all duration-200 whitespace-nowrap z-30 font-black tracking-wider uppercase border border-white/20 ${active ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-2 scale-95 pointer-events-none'}`}>
+          Cantidad: {value}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const VerticalBarChart = ({ data }) => {
-  if (data.length === 0) return <p className="text-xs text-gray-400 py-4 text-center">Sin datos.</p>;
-  const maxVal = Math.max(...data.map((d) => d.value));
+  if (!data || data.length === 0) return <p className="text-xs text-gray-400 py-4 text-center">Sin datos.</p>;
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="h-64 flex items-end justify-around gap-4 mt-8 px-4 bg-gray-50/50 rounded-xl border border-gray-100 py-6">
-      {data.map((item, idx) => (
-        <div key={idx} className="flex flex-col items-center h-full w-12">
-          <CylinderBar percent={(item.value / maxVal) * 100} color="#2D3380" />
-          <span className="text-[10px] text-tikka-dark mt-4 font-bold text-center truncate w-full" title={item.label}>{item.label}</span>
-          <span className="text-[11px] font-black text-tikka-blue">{item.value}</span>
-        </div>
-      ))}
+    <div className="w-full overflow-x-auto py-2 scrollbar-thin">
+      <div className="h-72 flex items-end justify-around gap-2 mt-4 px-4 bg-gray-50/50 rounded-xl border border-gray-100 py-6 min-w-max">
+        {data.map((item, idx) => {
+          const color = idx % 2 === 0 ? "#2D3380" : "#10B981"; // azul y verde
+          return (
+            <div key={idx} className="flex flex-col items-center h-full w-20 md:w-24 px-1 flex-shrink-0">
+              <CylinderBar percent={(item.value / maxVal) * 100} color={color} value={item.value} />
+              <span 
+                className="text-[9px] md:text-[10px] text-tikka-dark mt-4 font-black text-center break-words w-full leading-tight min-h-[32px] flex items-center justify-center" 
+                title={item.label}
+              >
+                {item.label}
+              </span>
+              <span className="text-[11px] font-black text-tikka-blue mt-1">{item.value}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
