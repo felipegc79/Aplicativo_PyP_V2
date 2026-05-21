@@ -983,7 +983,7 @@ const AsignarSDSModule = ({ sdsData, asesores, onSaveAssignments }) => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
         <div className="p-4 bg-yellow-50 border-b border-yellow-100 flex justify-between items-center">
           <p className="text-sm text-yellow-800 font-bold">
-            ⚠ Servicios Disponibles ({filteredData.length}) | Seleccionadas:{" "}
+            ⚠ Servicios Disponibles ({filteredData.length}) | Seleccionados:{" "}
             {selectedRows.length}
           </p>
           <button
