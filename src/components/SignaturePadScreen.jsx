@@ -6,9 +6,10 @@ const SignaturePadScreen = ({
   showModal,
   signatureType,
   onSaveSignature,
+  form,
 }) => {
   const title =
-    signatureType === "client" ? "Firma del Cliente" : "Firma del Proveedor";
+    signatureType === "client" ? "Firma del Cliente" : "Firma del Asesor (Proveedor)";
 
   // Modos de firma: 'draw' (mano alzada) o 'type' (teclado)
   const [mode, setMode] = useState("draw");
@@ -139,7 +140,7 @@ const SignaturePadScreen = ({
       second: "2-digit",
       hour12: true,
     });
-    showModal("Procesando...", "Generando Código QR Seguro...");
+    showModal("Procesando...", "Generando Código QR Seguro y Accesible...");
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -168,20 +169,29 @@ const SignaturePadScreen = ({
       signMethod = "Manuscrita Digital";
     } else {
       signMethod = "Teclado Seguro";
-      // Creamos una imagen dummy o guardamos null, ya que usaremos el QR
       representation = null;
     }
 
-    // 2. GENERACIÓN DEL QR (Punto 8)
-    // Datos a codificar en el QR
-    const qrData = `FIRMADO POR: ${
-      signatureType === "client" ? "Cliente" : "Proveedor"
-    }\nMETODO: ${signMethod}\nFECHA: ${timestamp}\nGEO: ${geolocation}\n${
-      mode === "type" ? "NOMBRE: " + typedName : "FIRMA GRAFICA"
-    }`;
+    // 2. GENERACIÓN DEL QR - URL accesible para cámaras de teléfonos móviles
+    const sdsNumber = form?.sdsNumber || "N/A";
+    const clienteName = form?.cliente || "N/A";
+    const firmanteNombre = mode === "type" ? typedName : (signatureType === "client" ? (form?.nombreResponsable || "Responsable Cliente") : (form?.nombreProveedor || "Asesor SST"));
+    
+    const baseUrl = window.location.origin;
+    const qrParams = new URLSearchParams({
+      verify: "true",
+      sds: String(sdsNumber),
+      cliente: clienteName,
+      firmadoPor: signatureType === "client" ? "Cliente" : "Proveedor/Asesor",
+      metodo: signMethod,
+      fecha: timestamp,
+      geo: geolocation,
+      nombre: firmanteNombre
+    });
+    const qrData = `${baseUrl}/?${qrParams.toString()}`;
 
     // Usamos API pública para generar el QR al vuelo
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
       qrData
     )}`;
 

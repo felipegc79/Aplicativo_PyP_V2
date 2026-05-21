@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import AppLayout from "../components/AppLayout";
 
 // --- CARD SDS ---
@@ -24,7 +24,7 @@ const SdsCard = ({ item, onSelect }) => {
           <div>
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
               {/* Mostramos el ID que ahora puede tener sufijo -01, -02 */}
-              SDS #{item.SDS}
+              Servicio #{item.SDS}
             </span>
             <h3 className="text-base font-bold text-tikka-blue leading-tight mt-1 line-clamp-2">
               {item.Cliente}

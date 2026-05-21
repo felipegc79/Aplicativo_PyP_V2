@@ -99,7 +99,7 @@ const ActaPreview = ({
       <div className="relative z-10">
         <div className="p-5 text-center border-b border-gray-100 bg-white">
           <h4 className="font-bold text-xl text-tikka-blue">ACTA DE VISITA</h4>
-          <p className="text-sm text-gray-500">SDS #{form.sdsNumber}</p>
+          <p className="text-sm text-gray-500">Servicio #{form.sdsNumber}</p>
         </div>
 
         <div className="p-4 pt-0">
@@ -185,31 +185,38 @@ const ActaPreview = ({
 
             {/* GRUPO ASESOR */}
             <div className="bg-gray-50 px-4 py-2 text-xs font-bold text-tikka-blue uppercase border-y border-gray-100 mt-2">
-              Proveedor
+              Asesor
             </div>
             {renderRow("Nombre", form.nombreProveedor)}
             {renderRow("Identificación", form.idProveedor)}
             {renderRow("Teléfono", form.telProveedor)}
             {renderRow("Cargo", form.cargoProveedor)}
             {renderRow("Email", form.emailProveedor)}
-            {renderRow("Licencia", form.licencia)}
+            {renderRow("Licencia", form.licenciaSST || form.licencia)}
           </div>
         </div>
 
-          <div className="mt-4 p-4 bg-gray-50 border-t border-gray-200 relative z-20">
-            <h5 className="font-bold text-center mb-6 text-tikka-blue uppercase tracking-widest text-sm">
-              Firma Digital Verificada (QR)
-            </h5>
-            <div className="flex flex-col gap-4">
-              {clientSignature && (
-                <SignatureBlock
-                  title="Firma Específica"
-                  data={clientSignature}
-                  color="blue"
-                />
-              )}
-            </div>
+        <div className="mt-4 p-4 bg-gray-50 border-t border-gray-200 relative z-20">
+          <h5 className="font-bold text-center mb-6 text-tikka-blue uppercase tracking-widest text-sm">
+            Firmas Digitales Verificadas (QR)
+          </h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {clientSignature && (
+              <SignatureBlock
+                title="Firma del Cliente"
+                data={clientSignature}
+                color="blue"
+              />
+            )}
+            {providerSignature && (
+              <SignatureBlock
+                title="Firma del Asesor (Proveedor)"
+                data={providerSignature}
+                color="green"
+              />
+            )}
           </div>
+        </div>
       </div>
     </div>
   );

@@ -60,8 +60,6 @@ export default function App() {
   useEffect(() => {
     if (!isOffline) {
       console.log("Sincronizando datos pendientes...");
-      // Aquí se sincronizaría con el backend real:
-      // fetch('http://localhost:3001/api/sync', { method: 'POST', body: JSON.stringify(sdsData) })
     }
   }, [isOffline, sdsData]);
 
@@ -69,6 +67,32 @@ export default function App() {
   useEffect(() => {
     localforage.setItem("sdsData", sdsData);
   }, [sdsData]);
+
+  // --- ESCANEO QR Y VERIFICACIÓN DE CREDENCIALES ---
+  const [verifyData, setVerifyData] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verify") === "true") {
+      const data = {
+        sds: params.get("sds"),
+        cliente: params.get("cliente"),
+        firmadoPor: params.get("firmadoPor"),
+        metodo: params.get("metodo"),
+        fecha: params.get("fecha"),
+        geo: params.get("geo"),
+        nombre: params.get("nombre"),
+      };
+      setVerifyData(data);
+      setCurrentScreen("verification");
+    }
+  }, []);
+
+  const handleCloseVerification = () => {
+    setVerifyData(null);
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setCurrentScreen("login");
+  };
 
   // --- BASE DE DATOS DE USUARIOS ---
   const [users, setUsers] = useState([
@@ -85,7 +109,7 @@ export default function App() {
       username: "lider",
       password: "123",
       name: "Luis Líder",
-      role: "Lider de prevencion",
+      role: "Lider",
       email: "lider@colsanitas.com",
       identificacion: "1010222333",
       telefono: "3007771111",
@@ -100,7 +124,7 @@ export default function App() {
       telefono: "3001234567",
       email: "asesor@proveedor.com",
       empresa: "Prevención Integral S.A.S",
-      cargo: "Asesor de Prevención",
+      cargo: "Asesor",
     },
     {
       id: 2,
@@ -109,7 +133,7 @@ export default function App() {
       telefono: "3109876543",
       email: "pedro@proveedor.com",
       empresa: "Medicina Preventiva IPS S.A.S",
-      cargo: "Asesor de Prevención",
+      cargo: "Asesor",
     },
     {
       id: 3,
@@ -118,7 +142,7 @@ export default function App() {
       telefono: "3204567890",
       email: "maria.lopez@consultores.com",
       empresa: "Gestión SST Consultores S.A.S.",
-      cargo: "Asesor de Prevención",
+      cargo: "Asesor",
     },
     {
       id: 4,
@@ -127,7 +151,7 @@ export default function App() {
       telefono: "3157890123",
       email: "carlos.ramirez@phigma.com",
       empresa: "Soluciones Ocupacionales S.A.S",
-      cargo: "Asesor de Prevención",
+      cargo: "Asesor",
     },
     {
       id: 5,
@@ -136,7 +160,7 @@ export default function App() {
       telefono: "3182345678",
       email: "laura.gomez@bilianz.com",
       empresa: "Bienestar Laboral Consultores S.A.S",
-      cargo: "Asesor de Prevención",
+      cargo: "Asesor",
     },
     {
       id: 6,
@@ -145,7 +169,7 @@ export default function App() {
       telefono: "3008901234",
       email: "andres.moreno@quiron.com",
       empresa: "Proteger IPS Ocupacional",
-      cargo: "Asesor de Prevención",
+      cargo: "Asesor",
     },
   ]);
 
@@ -174,7 +198,7 @@ export default function App() {
     if (userData.role === "Administrador del sistema") {
       setDirectorView("tableros");
       setCurrentScreen("directorDashboard");
-    } else if (userData.role === "Lider de prevencion") {
+    } else if (userData.role === "Lider") {
       setCurrentScreen("leaderDashboard");
     } else {
       setCurrentScreen("main");
@@ -193,6 +217,7 @@ export default function App() {
     setCurrentPin(null);
     setPinVerified(false);
     setClientSignatureData(null);
+    setProviderSignatureData(null);
   };
 
   const handleResetData = () => {
@@ -226,22 +251,23 @@ export default function App() {
     );
   };
 
-  // --- DENTRO DE App.js ---
-
+  // --- FINALIZAR ACTA ---
   const handleFinalizeActa = (sdsId, finalFormData) => {
     let newData = [...sdsData];
-    const originalIndex = newData.findIndex((item) => item.SDS === sdsId);
+    const originalIndex = newData.findIndex((item) => item.SDS === sdsId || String(item.SDS) === String(sdsId));
 
     if (originalIndex !== -1) {
       const originalItem = newData[originalIndex];
 
       const existingChildrenCount = newData.filter(
-        (item) => item.ParentSDS === originalItem.SDS
+        (item) => item.ParentSDS === originalItem.SDS || String(item.ParentSDS) === String(originalItem.SDS)
       ).length;
 
       const nextSequence = String(existingChildrenCount + 1).padStart(2, "0");
       const newChildSdsId = `${originalItem.SDS}-${nextSequence}`;
 
+      // ERROR DE GUARDADO RESUELTO:
+      // Promovemos los campos de ubicación y fecha del formulario final a primer nivel de la nueva acta
       const newActItem = {
         ...originalItem,
         SDS: newChildSdsId,
@@ -252,8 +278,14 @@ export default function App() {
         DetallesActa: finalFormData,
         Firmas: {
           Cliente: clientSignatureData,
+          Proveedor: providerSignatureData,
         },
-        FechaEjecucion: new Date().toISOString().split("T")[0],
+        FechaEjecucion: finalFormData.fechaActividad || new Date().toISOString().split("T")[0],
+        FechaProgramada: finalFormData.fechaActividad || originalItem.FechaProgramada,
+        Departamento: finalFormData.departamento || originalItem.Departamento,
+        Municipio: finalFormData.municipio || originalItem.Municipio,
+        Direccion: finalFormData.direccion || originalItem.Direccion || "No registrada",
+        HorasEjecutadas: Number(finalFormData.cantidadEjecutada) || Number(originalItem.HorasPlaneadas) || 0,
       };
 
       const updatedParentItem = {
@@ -265,10 +297,7 @@ export default function App() {
       newData[originalIndex] = updatedParentItem;
       newData.unshift(newActItem);
       
-      // La sincronización real con un backend iría aquí.
-      // Por ahora, guardamos en el estado y useEffect se encarga de IndexedDB.
       if (!isOffline) {
-        // fetch('http://localhost:3001/api/sync', { ... })
         console.log("Sincronizando datos con el servidor...");
       } else {
         console.log("Modo Offline: Datos guardados localmente.");
@@ -282,7 +311,7 @@ export default function App() {
     if (user?.role === "Administrador del sistema") {
       setDirectorView("tableros");
       setCurrentScreen("directorDashboard");
-    } else if (user?.role === "Lider de prevencion") {
+    } else if (user?.role === "Lider") {
       setCurrentScreen("leaderDashboard");
     } else {
       setCurrentScreen("main");
@@ -300,7 +329,7 @@ export default function App() {
         resetFlow();
         return;
       }
-      if (user?.role === "Lider de prevencion") {
+      if (user?.role === "Lider") {
         setCurrentScreen("leaderDashboard");
         resetFlow();
         return;
@@ -407,6 +436,8 @@ export default function App() {
             showModal={showModal}
             clientSigned={!!clientSignatureData}
             clientSignatureData={clientSignatureData}
+            providerSigned={!!providerSignatureData}
+            providerSignatureData={providerSignatureData}
             setActaForm={setActaForm}
             onFinalize={handleFinalizeActa}
           />
@@ -430,8 +461,95 @@ export default function App() {
             onNavigate={navigateTo}
             showModal={showModal}
             signatureType="client"
+            form={actaForm}
             onSaveSignature={setClientSignatureData}
           />
+        );
+      case "signProvider":
+        return (
+          <SignaturePadScreen
+            onNavigate={navigateTo}
+            showModal={showModal}
+            signatureType="provider"
+            form={actaForm}
+            onSaveSignature={setProviderSignatureData}
+          />
+        );
+      case "verification":
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-950 via-slate-900 to-teal-950">
+            <div className="w-full max-w-lg bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20 transform transition-all hover:scale-[1.01] relative overflow-hidden">
+              {/* Floating premium badge decoration */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-teal-400 to-indigo-500 rounded-bl-full opacity-10"></div>
+              
+              <div className="text-center mb-6">
+                <div className="mx-auto w-20 h-20 bg-emerald-100/90 rounded-full flex items-center justify-center mb-4 shadow-inner border-2 border-emerald-400/50 animate-pulse">
+                  <svg className="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full border border-emerald-200">
+                  Documento Auténtico
+                </span>
+                <h2 className="text-2xl font-black text-slate-800 mt-3 uppercase tracking-tight">
+                  Firma Digital Verificada
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">Plataforma Tecnológica T'IKKA Consultores</p>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3.5 mb-6 text-sm">
+                <div className="flex justify-between items-center border-b border-slate-200/60 pb-2">
+                  <span className="font-bold text-slate-500 text-xs uppercase tracking-wide">ID de Servicio:</span>
+                  <span className="font-extrabold text-slate-800 bg-slate-200 px-2 py-0.5 rounded text-xs">#{verifyData?.sds}</span>
+                </div>
+                <div className="flex justify-between items-start border-b border-slate-200/60 pb-2 gap-2">
+                  <span className="font-bold text-slate-500 text-xs uppercase tracking-wide flex-shrink-0">Empresa / Cliente:</span>
+                  <span className="font-extrabold text-slate-800 text-right">{verifyData?.cliente}</span>
+                </div>
+                <div className="flex justify-between items-start border-b border-slate-200/60 pb-2 gap-2">
+                  <span className="font-bold text-slate-500 text-xs uppercase tracking-wide flex-shrink-0">Firmado Por:</span>
+                  <span className="font-extrabold text-indigo-700 text-right uppercase">{verifyData?.nombre}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-200/60 pb-2">
+                  <span className="font-bold text-slate-500 text-xs uppercase tracking-wide">Rol del Firmante:</span>
+                  <span className="font-bold text-teal-700 uppercase text-xs">{verifyData?.firmadoPor}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-200/60 pb-2">
+                  <span className="font-bold text-slate-500 text-xs uppercase tracking-wide">Método de Firma:</span>
+                  <span className="font-semibold text-slate-700 text-xs">{verifyData?.metodo}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-200/60 pb-2">
+                  <span className="font-bold text-slate-500 text-xs uppercase tracking-wide">Fecha de Captura:</span>
+                  <span className="font-semibold text-slate-700 text-xs">{verifyData?.fecha}</span>
+                </div>
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <span className="font-bold text-slate-500 text-xs uppercase tracking-wide">Coordenadas GPS:</span>
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono text-xs text-slate-600">{verifyData?.geo}</span>
+                    {verifyData?.geo && !verifyData.geo.includes("no disponible") && !verifyData.geo.includes("no soportada") && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(verifyData.geo)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800 font-extrabold underline flex items-center gap-1"
+                      >
+                        🗺️ Ver Mapa
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleCloseVerification}
+                  className="w-full py-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold uppercase text-xs tracking-wider transition-all active:scale-95 shadow-md flex items-center justify-center gap-2"
+                >
+                  ✕ Cerrar Validación
+                </button>
+              </div>
+            </div>
+          </div>
         );
       default:
         return (

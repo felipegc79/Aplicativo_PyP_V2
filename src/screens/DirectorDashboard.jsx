@@ -67,8 +67,8 @@ const SdsCard = ({ item, onSelect }) => {
           <div>
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
               {item.IsChildAct
-                ? `ACTA DE SDS #${item.ParentSDS}`
-                : `SDS #${item.SDS}`}
+                ? `ACTA DE SERVICIO #${item.ParentSDS}`
+                : `SERVICIO #${item.SDS}`}
             </span>
             <h3 className="text-base font-bold text-tikka-dark leading-tight mt-1 line-clamp-2">
               {item.Cliente}
@@ -717,7 +717,7 @@ const DashboardModule = ({ sdsData }) => {
       </h2>
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 gap-3">
         <FilterInput
-          label="SDS"
+          label="Servicio"
           value={filters.sds}
           onChange={(v) => setFilters({ ...filters, sds: v })}
         />
@@ -800,7 +800,7 @@ const DashboardModule = ({ sdsData }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
           <p className="text-sm text-gray-500 uppercase font-bold">
-            Total Órdenes
+            Total Servicios
           </p>
           <p className="text-3xl font-bold text-tikka-dark">{totalSDS}</p>
         </div>
@@ -828,19 +828,19 @@ const DashboardModule = ({ sdsData }) => {
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-bold text-gray-700 mb-4 border-b pb-2">
-            SDS por Estado
+            Servicios por Estado
           </h3>
           <VerticalBarChart data={datosPorEstado} />
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-bold text-gray-700 mb-4 border-b pb-2">
-            SDS por Proveedor
+            Servicios por Proveedor
           </h3>
           <VerticalBarChart data={datosPorProveedor} />
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-bold text-gray-700 mb-4 border-b pb-2">
-            SDS por Cliente
+            Servicios por Cliente
           </h3>
           <VerticalBarChart data={datosPorCliente} />
         </div>
@@ -947,13 +947,13 @@ const GestionActasModule = ({ sdsData, onNavigate }) => {
           ))
         ) : (
           <p className="text-center text-gray-400 py-4">
-            No hay SDS pendientes.
+            No hay Servicios pendientes.
           </p>
         )}
       </AccordionSection>
 
       <AccordionSection
-        title="SDS Ejecutadas / Histórico"
+        title="Servicios Ejecutados / Histórico"
         count={visitedOrders.length}
         isOpen={expandedSection === "visited"}
         onToggle={() => toggleSection("visited")}
@@ -1024,14 +1024,14 @@ const CrearAsesorModule = ({ asesores, setAsesores, showModal }) => {
       telefono: "",
       email: "",
       empresa: "",
-      cargo: "Asesor de Prevención",
+      cargo: "Asesor",
     });
   };
 
   return (
     <div className="space-y-4 animate-fade-in pb-10 max-w-4xl mx-auto">
       <h2 className="text-xl font-bold text-tikka-dark border-b pb-2">
-        Crear Asesor de Prevención SDS
+        Crear Asesor
       </h2>
       <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
         <form
@@ -1105,7 +1105,7 @@ const CrearAsesorModule = ({ asesores, setAsesores, showModal }) => {
             <input
               type="text"
               name="cargo"
-              value="Asesor de Prevención"
+              value="Asesor"
               disabled
               className="w-full p-3 border rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
             />
@@ -1901,6 +1901,55 @@ const UsuariosModule = ({ showModal, currentUser }) => {
   const [selectedRoles, setSelectedRoles] = useState({});
   const apiBase = window.Capacitor ? "https://tikka-gestion-pyp.vercel.app" : "";
 
+  // --- ESTADOS Y MANEJADORES DE EDICIÓN ---
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    identificacion: "",
+    telefono: "",
+    role: "",
+  });
+
+  const handleStartEdit = (u) => {
+    setEditingUser(u);
+    setEditForm({
+      name: u.name || "",
+      email: u.email || "",
+      identificacion: u.identificacion || "",
+      telefono: u.telefono || "",
+      role: u.role || "",
+    });
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editForm.name || !editForm.email || !editForm.identificacion || !editForm.role) {
+      showModal("Atención", "Por favor complete todos los campos requeridos.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      if (response.ok) {
+        showModal("Éxito", "Información de usuario actualizada correctamente.");
+        setEditingUser(null);
+        fetchUsers();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        showModal("Error", data.error || "No se pudo actualizar el usuario.");
+      }
+    } catch (err) {
+      console.error(err);
+      showModal("Error", "Error de conexión al actualizar el usuario.");
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       const response = await fetch(`${apiBase}/api/users`);
@@ -2017,8 +2066,8 @@ const UsuariosModule = ({ showModal, currentUser }) => {
 
   const roles = [
     "Administrador del sistema",
-    "Lider de prevencion",
-    "asesor de prevencion",
+    "Lider",
+    "Asesor",
   ];
 
   return (
@@ -2123,22 +2172,115 @@ const UsuariosModule = ({ showModal, currentUser }) => {
                   <p className="text-sm font-bold text-gray-800 truncate">{u.name}</p>
                   <p className="text-[10px] font-bold text-tikka-green uppercase">{u.role}</p>
                 </div>
-                {isAdmin && !isSelf && (
-                  <button
-                    onClick={() => deleteUser(u.id, u.name)}
-                    className="flex-shrink-0 p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                    title="Eliminar usuario"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
-                    </svg>
-                  </button>
-                )}
+                <div className="flex items-center gap-1">
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleStartEdit(u)}
+                      className="flex-shrink-0 p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                      title="Editar usuario"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  )}
+                  {isAdmin && !isSelf && (
+                    <button
+                      onClick={() => deleteUser(u.id, u.name)}
+                      className="flex-shrink-0 p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                      title="Eliminar usuario"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-lg border-t-8 border-tikka-blue animate-fade-in">
+            <h3 className="text-xl font-bold text-tikka-dark mb-4 uppercase tracking-tight">Editar Información de Usuario</h3>
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tikka-green focus:border-transparent text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Correo Electrónico</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tikka-green focus:border-transparent text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Identificación</label>
+                <input
+                  type="text"
+                  value={editForm.identificacion}
+                  onChange={(e) => setEditForm({ ...editForm, identificacion: e.target.value })}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tikka-green focus:border-transparent text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Teléfono</label>
+                <input
+                  type="text"
+                  value={editForm.telefono}
+                  onChange={(e) => setEditForm({ ...editForm, telefono: e.target.value })}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tikka-green focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Rol de Usuario</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-tikka-green focus:border-transparent text-sm"
+                  required
+                >
+                  {roles.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs uppercase transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 text-white rounded-lg font-bold text-xs uppercase shadow-md transition-all active:scale-95 hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg, #2D3380 0%, #00BFA5 100%)" }}
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

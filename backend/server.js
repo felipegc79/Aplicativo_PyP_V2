@@ -32,7 +32,34 @@ if (!fs.existsSync(dbPath)) {
   }
 }
 
-const getUsers = () => JSON.parse(fs.readFileSync(dbPath));
+const getUsers = () => {
+  const users = JSON.parse(fs.readFileSync(dbPath));
+  let modified = false;
+  const migrated = users.map((u) => {
+    let updatedRole = u.role;
+    if (u.role === "Lider de prevencion" || u.role === "Líder de prevención" || u.role === "Líder de Prevención") {
+      updatedRole = "Lider";
+      modified = true;
+    } else if (
+      u.role === "Asesor de Prevención" ||
+      u.role === "asesor de prevencion" ||
+      u.role === "Asesor de prevención" ||
+      u.role === "Asesor Prevención"
+    ) {
+      updatedRole = "Asesor";
+      modified = true;
+    }
+    return { ...u, role: updatedRole };
+  });
+  if (modified) {
+    try {
+      fs.writeFileSync(dbPath, JSON.stringify(migrated, null, 2));
+    } catch (e) {
+      console.error("Error al persistir roles migrados:", e);
+    }
+  }
+  return migrated;
+};
 const saveUsers = (users) => fs.writeFileSync(dbPath, JSON.stringify(users, null, 2));
 
 const transporter = nodemailer.createTransport({
@@ -150,6 +177,26 @@ app.get("/api/users", (req, res) => {
   const users = getUsers();
   const safeUsers = users.map(({password, ...rest}) => rest);
   res.json({ users: safeUsers });
+});
+
+app.put("/api/users/:id", (req, res) => {
+  const userId = Number(req.params.id);
+  const { name, email, identificacion, telefono, role } = req.body;
+  const users = getUsers();
+  const user = users.find((u) => u.id === userId);
+
+  if (!user) {
+    return res.status(404).json({ error: "Usuario no encontrado." });
+  }
+
+  if (name !== undefined) user.name = name;
+  if (email !== undefined) user.email = email;
+  if (identificacion !== undefined) user.identificacion = identificacion;
+  if (telefono !== undefined) user.telefono = telefono;
+  if (role !== undefined) user.role = role;
+
+  saveUsers(users);
+  res.json({ message: "Usuario actualizado correctamente.", user });
 });
 
 app.delete("/api/users/:id", (req, res) => {

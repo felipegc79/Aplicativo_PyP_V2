@@ -11,8 +11,8 @@ const RegisterScreen = ({ onRegisterSuccess, onCancel, showModal }) => {
 
   const roles = [
     "Administrador del sistema",
-    "Lider de prevencion",
-    "Asesor de Prevención",
+    "Lider",
+    "Asesor",
   ];
 
   const handleChange = (e) => {
