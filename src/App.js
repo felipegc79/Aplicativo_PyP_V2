@@ -125,6 +125,7 @@ export default function App() {
       email: "asesor@proveedor.com",
       empresa: "Prevención Integral S.A.S",
       cargo: "Asesor",
+      licencia: "Res. 123 de 2023 | Exp: 12/05/2023",
     },
     {
       id: 2,
@@ -134,6 +135,7 @@ export default function App() {
       email: "pedro@proveedor.com",
       empresa: "Medicina Preventiva IPS S.A.S",
       cargo: "Asesor",
+      licencia: "Res. 456 de 2023 | Exp: 18/08/2023",
     },
     {
       id: 3,
@@ -143,6 +145,7 @@ export default function App() {
       email: "maria.lopez@consultores.com",
       empresa: "Gestión SST Consultores S.A.S.",
       cargo: "Asesor",
+      licencia: "Res. 789 de 2024 | Exp: 22/01/2024",
     },
     {
       id: 4,
@@ -152,6 +155,7 @@ export default function App() {
       email: "carlos.ramirez@phigma.com",
       empresa: "Soluciones Ocupacionales S.A.S",
       cargo: "Asesor",
+      licencia: "Res. 101 de 2023 | Exp: 05/11/2023",
     },
     {
       id: 5,
@@ -161,6 +165,7 @@ export default function App() {
       email: "laura.gomez@bilianz.com",
       empresa: "Bienestar Laboral Consultores S.A.S",
       cargo: "Asesor",
+      licencia: "Res. 202 de 2024 | Exp: 14/03/2024",
     },
     {
       id: 6,
@@ -170,6 +175,7 @@ export default function App() {
       email: "andres.moreno@quiron.com",
       empresa: "Proteger IPS Ocupacional",
       cargo: "Asesor",
+      licencia: "Res. 303 de 2023 | Exp: 30/09/2023",
     },
   ]);
 
@@ -259,6 +265,10 @@ export default function App() {
     if (originalIndex !== -1) {
       const originalItem = newData[originalIndex];
 
+      // Horas reportadas en esta acta (visita)
+      const horasReportadas = Number(finalFormData.tiempoEjecucion) || 0;
+
+      // Obtener cantidad de actas hijas existentes para este padre
       const existingChildrenCount = newData.filter(
         (item) => item.ParentSDS === originalItem.SDS || String(item.ParentSDS) === String(originalItem.SDS)
       ).length;
@@ -266,8 +276,7 @@ export default function App() {
       const nextSequence = String(existingChildrenCount + 1).padStart(2, "0");
       const newChildSdsId = `${originalItem.SDS}-${nextSequence}`;
 
-      // ERROR DE GUARDADO RESUELTO:
-      // Promovemos los campos de ubicación y fecha del formulario final a primer nivel de la nueva acta
+      // Nuevo registro de acta hija (visita ejecutada)
       const newActItem = {
         ...originalItem,
         SDS: newChildSdsId,
@@ -275,7 +284,10 @@ export default function App() {
         ParentSDS: originalItem.SDS,
         Estado: "Acta Diligenciada",
         Calificacion: finalFormData.evaluacion?.replace(/_/g, " ") || "N/A",
-        DetallesActa: finalFormData,
+        DetallesActa: {
+          ...finalFormData,
+          cantidadEjecutada: horasReportadas, // Sincronizar horas ejecutadas específicas
+        },
         Firmas: {
           Cliente: clientSignatureData,
           Proveedor: providerSignatureData,
@@ -285,13 +297,22 @@ export default function App() {
         Departamento: finalFormData.departamento || originalItem.Departamento,
         Municipio: finalFormData.municipio || originalItem.Municipio,
         Direccion: finalFormData.direccion || originalItem.Direccion || "No registrada",
-        HorasEjecutadas: Number(finalFormData.cantidadEjecutada) || Number(originalItem.HorasPlaneadas) || 0,
+        HorasEjecutadas: horasReportadas, // Horas ejecutadas en esta visita específica
       };
+
+      // Actualizar acumulados en la orden padre
+      const acumuladoAnterior = Number(originalItem.HorasEjecutadas) || 0;
+      const nuevoAcumulado = acumuladoAnterior + horasReportadas;
+      const horasPlaneadas = Number(originalItem.HorasPlaneadas) || 0;
+      const horasPendientes = Math.max(0, horasPlaneadas - nuevoAcumulado);
 
       const updatedParentItem = {
         ...originalItem,
         IsChildAct: false,
-        Estado: "Concluida",
+        HorasEjecutadas: nuevoAcumulado, // Acumulado de horas ejecutadas hasta ahora
+        // Si las horas pendientes se completaron, el acta padre pasa a "Concluida".
+        // De lo contrario, permanece en "Programada" para seguir acumulando visitas hijas.
+        Estado: horasPendientes <= 0 ? "Concluida" : "Programada",
       };
 
       newData[originalIndex] = updatedParentItem;
@@ -417,6 +438,7 @@ export default function App() {
             selectedSds={selectedSds}
             setActaForm={setActaForm}
             sdsData={sdsData} // Pasar sdsData para validación
+            asesores={asesores}
           />
         );
 

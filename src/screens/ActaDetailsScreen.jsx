@@ -84,9 +84,26 @@ const ActaDetailsScreen = ({ onNavigate, sdsItem, user }) => {
         setPdfPreviewUrl(imgData);
       } else {
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pageWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // Primera página
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Páginas subsiguientes en cascada si supera el alto de una página A4
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
         pdf.save(`Acta_SDS_${sdsItem.SDS}.pdf`);
       }
     }).catch(err => {

@@ -281,7 +281,8 @@ const SignaturePadScreen = ({
           </button>
           <button
             onClick={handleSave}
-            className="w-full py-4 bg-tikka-blue text-white rounded-xl font-bold shadow-lg"
+            className="w-full py-4 tikka-gradient-btn text-white rounded-xl font-bold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all"
+            style={{ background: "linear-gradient(135deg, #2D3380 0%, #00BFA5 100%)", color: "white" }}
           >
             Generar QR y Guardar
           </button>

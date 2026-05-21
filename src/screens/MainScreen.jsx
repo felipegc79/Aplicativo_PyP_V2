@@ -2,11 +2,17 @@ import React, { useState } from "react";
 import AppLayout from "../components/AppLayout";
 
 // --- CARD SDS ---
+// --- CARD SDS ---
 const SdsCard = ({ item, onSelect }) => {
   // Identificación de tipo
   const isChild = !!item.IsChildAct;
   // Si es padre y está programada, es un pendiente
   const isPending = !isChild && item.Estado === "Programada";
+
+  const horasPlaneadas = Number(item.HorasPlaneadas) || 0;
+  const horasEjecutadas = Number(item.HorasEjecutadas) || 0;
+  const horasPendientes = Math.max(0, horasPlaneadas - horasEjecutadas);
+  const labelEjecutadas = isPending ? "Acumulado" : "En esta Acta";
 
   return (
     <div
@@ -66,6 +72,65 @@ const SdsCard = ({ item, onSelect }) => {
           </p>
         </div>
 
+        {/* --- APARTADO PREMIUM DE SEGUIMIENTO DE HORAS --- */}
+        <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-100 text-xs mb-3">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="font-bold text-gray-500 uppercase tracking-wide">
+              {isPending ? "Progreso General" : "Detalle Ejecución"}
+            </span>
+            <span className="text-gray-400 font-bold">
+              Meta: {horasPlaneadas}h
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex-1 bg-white border border-teal-200 rounded px-2 py-1 flex flex-col items-center">
+              <span className="text-[10px] text-teal-600 font-bold uppercase tracking-wider">
+                {labelEjecutadas}
+              </span>
+              <span className="text-sm font-extrabold text-gray-800">
+                {horasEjecutadas}h
+              </span>
+            </div>
+            {isPending && (
+              <>
+                <span className="text-gray-300">/</span>
+                <div
+                  className={`flex-1 bg-white border rounded px-2 py-1 flex flex-col items-center ${
+                    horasPendientes > 0
+                      ? "border-orange-200"
+                      : "border-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider ${
+                      horasPendientes > 0 ? "text-orange-600" : "text-gray-400"
+                    }`}
+                  >
+                    Pendientes
+                  </span>
+                  <span className="text-sm font-extrabold text-gray-800">
+                    {horasPendientes}h
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Barra de progreso animada con gradiente */}
+          {isPending && horasPlaneadas > 0 && (
+            <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden shadow-inner">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, (horasEjecutadas / horasPlaneadas) * 100)}%`,
+                  background: "linear-gradient(135deg, #2D3380 0%, #00BFA5 100%)",
+                }}
+              ></div>
+            </div>
+          )}
+        </div>
+
         <div className="bg-gray-50 rounded-lg p-2 border border-gray-100 text-xs">
           <div className="flex justify-between items-center mb-1">
             <span className="font-bold text-gray-500">
@@ -76,10 +141,10 @@ const SdsCard = ({ item, onSelect }) => {
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-white border border-gray-200 rounded px-2 py-1 flex flex-col items-center">
               <span className="text-[9px] text-gray-600 font-bold uppercase text-center">
-                Municipio
+                Municipio / Departamento
               </span>
               <span className="text-sm font-extrabold text-gray-800">
-                {item.Municipio || "N/A"}
+                {item.Municipio ? `${item.Municipio} - ${item.Departamento || ""}` : "N/A"}
               </span>
             </div>
           </div>
@@ -183,9 +248,11 @@ const MainScreen = ({ onNavigate, onLogout, user, sdsData }) => {
     (item) => !item.IsChildAct && item.Estado === "Programada"
   );
 
-  // 2. HISTÓRICO: Solo HIJAS (IsChildAct === true)
-  // Aquí aparecerán las SDS con sufijo (Ej: 16817-01) y sus horarios
-  const visitedOrders = sdsData.filter((item) => item.IsChildAct === true);
+  // 2. HISTÓRICO: Solo HIJAS (IsChildAct === true) o servicios padres concluidos por completo
+  // Aquí aparecerán las actas con consecutivas (Ej: 20003-01) y sus horarios, y padres completados
+  const visitedOrders = sdsData.filter(
+    (item) => item.IsChildAct === true || (!item.IsChildAct && item.Estado === "Concluida")
+  );
 
   const toggleSection = (section) =>
     setExpandedSection(expandedSection === section ? null : section);

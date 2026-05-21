@@ -16,8 +16,10 @@ const ActaFormScreen = ({
   selectedSds,
   setActaForm,
   sdsData = [],
+  asesores = [],
 }) => {
   const [formData, setFormData] = useState(null);
+  const [tiempoError, setTiempoError] = useState("");
 
   // Opciones de ubicación
   const departamentos = colombiaData.map(d => d.departamento);
@@ -47,13 +49,14 @@ const ActaFormScreen = ({
   useEffect(() => {
     if (selectedSds) {
       const today = new Date().toISOString().split("T")[0];
+      const isAsesor = user?.role !== "Administrador del sistema" && user?.role !== "Lider";
 
       setFormData({
         sdsNumber: selectedSds.SDS,
         cliente: selectedSds.Cliente,
         actividadPlaneada: selectedSds.Actividad,
         fechaActividad: today,
-        tiempoEjecucion: "2 horas", // Texto libre
+        tiempoEjecucion: 2, // Inicializar como número 2 en lugar de "2 horas"
         departamento: "",
         municipio: "",
         direccion: "",
@@ -66,14 +69,15 @@ const ActaFormScreen = ({
         idResponsable: "",
         telResponsable: "",
         // Datos Responsable Proveedor
-        nombreProveedor: user?.name || "",
-        cargoProveedor: user?.role || "",
-        emailProveedor: user?.email || "",
-        idProveedor: user?.identificacion || "",
-        telProveedor: user?.telefono || "",
-        licencia: "Res. 123 de 2023 | Exp: 12/05/2023",
+        nombreProveedor: isAsesor ? (user?.name || "") : "",
+        cargoProveedor: isAsesor ? (user?.role || "") : "",
+        emailProveedor: isAsesor ? (user?.email || "") : "",
+        idProveedor: isAsesor ? (user?.identificacion || "") : "",
+        telProveedor: isAsesor ? (user?.telefono || "") : "",
+        licencia: isAsesor ? "Res. 123 de 2023 | Exp: 12/05/2023" : "",
         evidencias: [], // Array para almacenar evidencias
       });
+      setTiempoError("");
     }
   }, [selectedSds, user]);
 
@@ -86,6 +90,15 @@ const ActaFormScreen = ({
       }
       return newState;
     });
+
+    if (name === "tiempoEjecucion") {
+      const numVal = Number(value);
+      if (numVal > 10) {
+        setTiempoError("El tiempo de ejecución no puede superar las 10 horas por acta");
+      } else {
+        setTiempoError("");
+      }
+    }
   };
 
   // --- LÓGICA DE EVIDENCIAS ---
@@ -155,11 +168,59 @@ const ActaFormScreen = ({
     }));
   };
 
+  const handleSelectProveedor = (e) => {
+    const { value } = e.target;
+    const selectedAsesor = asesores.find((a) => a.nombre === value);
+    if (selectedAsesor) {
+      setFormData((prev) => ({
+        ...prev,
+        nombreProveedor: selectedAsesor.nombre,
+        idProveedor: selectedAsesor.identificacion,
+        cargoProveedor: selectedAsesor.cargo,
+        telProveedor: selectedAsesor.telefono,
+        emailProveedor: selectedAsesor.email,
+        licencia: selectedAsesor.licencia || "Res. 123 de 2023 | Exp: 12/05/2023",
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        nombreProveedor: "",
+        idProveedor: "",
+        cargoProveedor: "",
+        telProveedor: "",
+        emailProveedor: "",
+        licencia: "",
+      }));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Eliminada validación estricta de cruce de horarios y horas totales
-    
+    if (!formData.nombreProveedor || formData.nombreProveedor === "Seleccione un asesor...") {
+      showModal(
+        "Proveedor Requerido",
+        "Por favor seleccione un asesor para este servicio antes de proceder."
+      );
+      return;
+    }
+
+    const numVal = Number(formData.tiempoEjecucion);
+    if (numVal > 10) {
+      showModal(
+        "Límite de Horas Superado",
+        "El tiempo de ejecución no puede superar las 10 horas por acta."
+      );
+      return;
+    }
+    if (numVal <= 0 || isNaN(numVal)) {
+      showModal(
+        "Tiempo Inválido",
+        "Por favor ingrese un tiempo de ejecución válido mayor a 0 horas."
+      );
+      return;
+    }
+
     // Validación de evidencias
     const evidenciasSinTipo = formData.evidencias.some((e) => !e.tipificacion);
     if (evidenciasSinTipo) {
@@ -219,14 +280,23 @@ const ActaFormScreen = ({
                 value={formData.fechaActividad}
                 onChange={handleChange}
               />
-              <FormInput
-                label="Tiempo de Ejecución (Opcional)"
-                type="text"
-                name="tiempoEjecucion"
-                value={formData.tiempoEjecucion}
-                onChange={handleChange}
-                placeholder="Ej. 2 horas, 1 día"
-              />
+              <div>
+                <FormInput
+                  label="Tiempo de Ejecución (Horas)"
+                  type="number"
+                  name="tiempoEjecucion"
+                  value={formData.tiempoEjecucion}
+                  onChange={handleChange}
+                  placeholder="Ej. 2, 6, 10"
+                  min="1"
+                  max="15"
+                />
+                {tiempoError && (
+                  <p className="text-red-600 font-bold text-xs mt-1 animate-pulse">
+                    ⚠️ {tiempoError}
+                  </p>
+                )}
+              </div>
             </div>
           </FormSection>
 
@@ -364,7 +434,7 @@ const ActaFormScreen = ({
 
           <FormSection title="5. Responsable Empresa">
             <FormSelect
-              label="Nombre Responsable"
+              label="Nombre del Cliente"
               name="nombreResponsable"
               value={formData.nombreResponsable}
               onChange={handleSelectResponsable}
@@ -399,11 +469,21 @@ const ActaFormScreen = ({
           </FormSection>
 
           <FormSection title="6. Responsable Proveedor">
-            <FormInput
-              label="Nombre Proveedor"
-              value={formData.nombreProveedor}
-              readOnly
-            />
+            {user?.role === "Administrador del sistema" || user?.role === "Lider" ? (
+              <FormSelect
+                label="Nombre Proveedor"
+                name="nombreProveedor"
+                value={formData.nombreProveedor || "Seleccione un asesor..."}
+                onChange={handleSelectProveedor}
+                options={["Seleccione un asesor...", ...asesores.map(a => a.nombre)]}
+              />
+            ) : (
+              <FormInput
+                label="Nombre Proveedor"
+                value={formData.nombreProveedor}
+                readOnly
+              />
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <FormInput
                 label="No. Identificación"
