@@ -2,6 +2,13 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import AppLayout from "../components/AppLayout";
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+  ZoomableGroup,
+} from "react-simple-maps";
+import colombiaGeo from "../colombia.json";
 
 // --- COMPONENTES VISUALES ---
 
@@ -343,6 +350,180 @@ const PieChart = ({ data }) => {
   );
 };
 
+const ColombiaMap = ({ data, activeFilter }) => {
+  const [tooltipContent, setTooltipContent] = useState("");
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
+  // Tabla directa de mapeo: nombre GeoJSON → clave en los datos
+  const geoToDataKey = {
+    "AMAZONAS": "Amazonas",
+    "ANTIOQUIA": "Antioquia",
+    "ARAUCA": "Arauca",
+    "ARCHIPIELAGO DE SAN ANDRES PROVIDENCIA Y SANTA CATALINA": "San Andres y Providencia",
+    "ATLANTICO": "Atlantico",
+    "BOLIVAR": "Bolivar",
+    "BOYACA": "Boyaca",
+    "CALDAS": "Caldas",
+    "CAQUETA": "Caqueta",
+    "CASANARE": "Casanare",
+    "CAUCA": "Cauca",
+    "CESAR": "Cesar",
+    "CHOCO": "Choco",
+    "CORDOBA": "Cordoba",
+    "CUNDINAMARCA": "Cundinamarca",
+    "GUAINIA": "Guainia",
+    "GUAVIARE": "Guaviare",
+    "HUILA": "Huila",
+    "LA GUAJIRA": "La Guajira",
+    "MAGDALENA": "Magdalena",
+    "META": "Meta",
+    "NARIÑO": "Nariño",
+    "NORTE DE SANTANDER": "Norte de Santander",
+    "PUTUMAYO": "Putumayo",
+    "QUINDIO": "Quindio",
+    "RISARALDA": "Risaralda",
+    "SANTAFE DE BOGOTA D.C": "Bogota",
+    "SANTANDER": "Santander",
+    "SUCRE": "Sucre",
+    "TOLIMA": "Tolima",
+    "VALLE DEL CAUCA": "Valle del Cauca",
+    "VAUPES": "Vaupes",
+    "VICHADA": "Vichada",
+  };
+
+  const handleMouseEnter = (geo, e) => {
+    const geoName = geo.properties.NOMBRE_DPT;
+    const dataKey = geoToDataKey[geoName];
+    const count = dataKey ? (data[dataKey] || 0) : 0;
+    const isActiveDepto = activeFilter && dataKey === activeFilter;
+
+    if (count > 0 || isActiveDepto) {
+      setTooltipContent(`${geoName}: ${count} Actividades`);
+    } else {
+      setTooltipContent("");
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPos({
+      x: e.clientX - rect.left + 10,
+      y: e.clientY - rect.top - 30,
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltipContent("");
+  };
+
+  return (
+    <div
+      className="relative w-full h-64 bg-blue-50/30 rounded-lg flex items-center justify-center overflow-hidden border border-blue-100"
+      onMouseMove={handleMouseMove}
+    >
+      <ComposableMap
+        projection="geoMercator"
+        projectionConfig={{
+          scale: 1700,
+          center: [-74, 4],
+        }}
+        className="w-full h-full"
+        style={{ width: "100%", height: "100%" }}
+      >
+        <ZoomableGroup>
+          <Geographies geography={colombiaGeo}>
+            {({ geographies }) =>
+              geographies.map((geo) => {
+                const geoName = geo.properties.NOMBRE_DPT;
+                const dataKey = geoToDataKey[geoName];
+                const count = dataKey ? (data[dataKey] || 0) : 0;
+                const isActiveDepto = activeFilter && dataKey === activeFilter;
+
+                const shouldColor = activeFilter
+                  ? isActiveDepto
+                  : (dataKey && data.hasOwnProperty(dataKey));
+
+                let fillColor = "#e5e7eb";
+                let hoverColor = "#d1d5db";
+
+                if (shouldColor) {
+                  if (count >= 20) {
+                    fillColor = "#10b981";
+                    hoverColor = "#059669";
+                  } else if (count > 0) {
+                    fillColor = "#fcd34d";
+                    hoverColor = "#fbbf24";
+                  } else {
+                    fillColor = "#ef4444";
+                    hoverColor = "#dc2626";
+                  }
+                }
+
+                return (
+                  <Geography
+                    key={geo.properties.DPTO || Math.random()}
+                    geography={geo}
+                    onMouseEnter={(e) => handleMouseEnter(geo, e)}
+                    onMouseLeave={handleMouseLeave}
+                    style={{
+                      default: {
+                        fill: fillColor,
+                        stroke: "#FFFFFF",
+                        strokeWidth: 0.5,
+                        outline: "none",
+                        transition: "all 250ms",
+                      },
+                      hover: {
+                        fill: hoverColor,
+                        stroke: "#FFFFFF",
+                        strokeWidth: 1,
+                        outline: "none",
+                        cursor: shouldColor ? "pointer" : "default",
+                      },
+                      pressed: {
+                        fill: fillColor,
+                        outline: "none",
+                      },
+                    }}
+                  />
+                );
+              })
+            }
+          </Geographies>
+        </ZoomableGroup>
+      </ComposableMap>
+
+      {tooltipContent && (
+        <div
+          className="absolute bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-xl pointer-events-none z-10 font-bold tracking-wide uppercase"
+          style={{ top: tooltipPos.y, left: tooltipPos.x }}
+        >
+          {tooltipContent}
+        </div>
+      )}
+
+      <div className="absolute top-4 right-4 bg-white/90 p-3 rounded-xl shadow-sm text-[10px] space-y-2 border border-gray-100 backdrop-blur-sm pointer-events-none">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-[#10b981] rounded-sm shadow-sm"></span>
+          <span className="text-gray-600 font-bold">20+ SDS</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-[#fcd34d] rounded-sm shadow-sm"></span>
+          <span className="text-gray-600 font-bold">1 - 19 SDS</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-[#ef4444] rounded-sm shadow-sm border border-gray-300"></span>
+          <span className="text-gray-600 font-bold">0 SDS</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-[#e5e7eb] rounded-sm shadow-sm border border-gray-300"></span>
+          <span className="text-gray-400 font-bold">Sin datos</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- MÓDULOS DE FUNCIONALIDAD ---
 const DashboardModule = ({ sdsData, user }) => {
   const [filters, setFilters] = useState({
@@ -361,6 +542,13 @@ const DashboardModule = ({ sdsData, user }) => {
   const uniqueProgs = [...new Set(sdsData.map((d) => d.Programa))].sort();
   const uniqueTypes = [...new Set(sdsData.map((d) => d.TipoActividad))].sort();
   const uniqueDeptos = [...new Set(sdsData.map((d) => d.Departamento))].sort();
+  
+  const getProveedorEmpresa = (proveedorName) => {
+    if (!asesores) return proveedorName;
+    const asesor = asesores.find(a => a.nombre === proveedorName);
+    return asesor && asesor.empresa ? asesor.empresa : proveedorName;
+  };
+
   const uniqueCities = useMemo(() => {
     const data = filters.departamento
       ? sdsData.filter(d => d.Departamento === filters.departamento)
@@ -426,6 +614,46 @@ const DashboardModule = ({ sdsData, user }) => {
   const pendientes = filteredData.filter(
     (d) => d.Estado === "Programada"
   ).length;
+
+  // --- LÓGICA MAPA (Normalización de Departamentos) ---
+  const getDepto = (municipio, item) => {
+    if (item.Departamento) return item.Departamento;
+    const map = {
+      Medellín: "Antioquia",
+      Bello: "Antioquia",
+      Envigado: "Antioquia",
+      Itagüí: "Antioquia",
+      Sabaneta: "Antioquia",
+      Girardota: "Antioquia",
+      "Bogotá D.C.": "Bogota",
+      Bogota: "Bogota",
+      Bogotá: "Bogota",
+      Cajicá: "Cundinamarca",
+      Soacha: "Cundinamarca",
+      Cota: "Cundinamarca",
+      Fontibón: "Cundinamarca",
+      Facatativá: "Cundinamarca",
+      Mosquera: "Cundinamarca",
+      Madrid: "Cundinamarca",
+      Funza: "Cundinamarca",
+      Manizales: "Caldas",
+      Chinchina: "Caldas",
+      Villamaría: "Caldas",
+      Pereira: "Risaralda",
+      Dosquebradas: "Risaralda",
+      Cali: "Valle del Cauca",
+      Palmira: "Valle del Cauca",
+      Yumbo: "Valle del Cauca",
+    };
+    return map[municipio] || item.Departamento || "Otro";
+  };
+  const conteoPorDepartamento = filteredData.reduce((acc, curr) => {
+    const depto = getDepto(curr.Municipio, curr);
+    if (depto && depto !== "Otro") {
+      acc[depto] = (acc[depto] || 0) + 1;
+    }
+    return acc;
+  }, {});
 
   const exportToPDF = () => {
     const input = document.getElementById('leader-dashboard-charts');
@@ -567,15 +795,8 @@ const DashboardModule = ({ sdsData, user }) => {
           <h3 className="text-lg font-bold text-gray-700 mb-4 w-full text-left border-b pb-2">
             Cobertura Geográfica
           </h3>
-          <div className="w-full h-64 bg-blue-50 rounded-lg flex items-center justify-center overflow-hidden relative">
-            <img
-              src="mapa-colombia.png"
-              alt="Mapa Colombia"
-              className="h-full object-contain opacity-80 mix-blend-multiply"
-            />
-            <span className="absolute bottom-2 right-2 text-xs bg-white px-2 py-1 rounded shadow">
-              Mapa Estático
-            </span>
+          <div className="w-full">
+            <ColombiaMap data={conteoPorDepartamento} activeFilter={filters.departamento} />
           </div>
         </div>
       </div>
@@ -886,6 +1107,12 @@ const AsignarSDSModule = ({ sdsData, asesores, onSaveAssignments }) => {
   const uniqueTypes = [...new Set(sdsData.map((d) => d.TipoActividad))].sort();
   const uniqueDeptos = [...new Set(sdsData.map((d) => d.Departamento))].sort();
 
+  const getProveedorEmpresa = (proveedorName) => {
+    if (!asesores) return proveedorName;
+    const asesor = asesores.find(a => a.nombre === proveedorName);
+    return asesor && asesor.empresa ? asesor.empresa : proveedorName;
+  };
+
   const uniqueCities = useMemo(() => {
     const data = filters.departamento
       ? sdsData.filter(d => d.Departamento === filters.departamento)
@@ -1046,6 +1273,7 @@ const AsignarSDSModule = ({ sdsData, asesores, onSaveAssignments }) => {
                 </th>
                 <th className="px-4 py-3">Servicio</th>
                 <th className="px-4 py-3">Cliente</th>
+                <th className="px-4 py-3">Proveedor</th>
                 <th className="px-4 py-3">Ciudad</th>
                 <th className="px-4 py-3">Actividad</th>
                 <th className="px-4 py-3 text-center">Acción (Asignar a)</th>
@@ -1070,6 +1298,7 @@ const AsignarSDSModule = ({ sdsData, asesores, onSaveAssignments }) => {
                     {item.SDS}
                   </td>
                   <td className="px-4 py-3">{item.Cliente}</td>
+                  <td className="px-4 py-3">{getProveedorEmpresa(item.Proveedor)}</td>
                   <td className="px-4 py-3">{item.Municipio}</td>
                   <td
                     className="px-4 py-3 truncate max-w-[200px]"

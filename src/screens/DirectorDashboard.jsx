@@ -548,6 +548,13 @@ const DashboardModule = ({ sdsData }) => {
   const uniqueTypes = [...new Set(sdsData.map((d) => d.TipoActividad))].sort();
   const uniqueDeptos = [...new Set(sdsData.map((d) => d.Departamento))].sort();
   
+  
+  const getProveedorEmpresa = (proveedorName) => {
+    if (!asesores) return proveedorName;
+    const asesor = asesores.find(a => a.nombre === proveedorName);
+    return asesor && asesor.empresa ? asesor.empresa : proveedorName;
+  };
+
   const uniqueCities = useMemo(() => {
     const data = filters.departamento 
       ? sdsData.filter(d => d.Departamento === filters.departamento)
@@ -1162,6 +1169,12 @@ const AsignarSDSModule = ({ sdsData, asesores, onSaveAssignments }) => {
   const uniqueTypes = [...new Set(sdsData.map((d) => d.TipoActividad))].sort();
   const uniqueDeptos = [...new Set(sdsData.map((d) => d.Departamento))].sort();
 
+  const getProveedorEmpresa = (proveedorName) => {
+    if (!asesores) return proveedorName;
+    const asesor = asesores.find(a => a.nombre === proveedorName);
+    return asesor && asesor.empresa ? asesor.empresa : proveedorName;
+  };
+
   const uniqueCities = useMemo(() => {
     const data = filters.departamento
       ? sdsData.filter(d => d.Departamento === filters.departamento)
@@ -1348,7 +1361,7 @@ const AsignarSDSModule = ({ sdsData, asesores, onSaveAssignments }) => {
                     {item.SDS}
                   </td>
                   <td className="px-4 py-3">{item.Cliente}</td>
-                  <td className="px-4 py-3">{item.Proveedor}</td>
+                  <td className="px-4 py-3">{getProveedorEmpresa(item.Proveedor)}</td>
                   <td className="px-4 py-3">{item.Municipio}</td>
                   <td
                     className="px-4 py-3 truncate max-w-[200px]"

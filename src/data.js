@@ -85,8 +85,8 @@ export const INITIAL_DATA = [
     "Total": 1894694,
     "Lider": "Palacios Aceros, Mayra Alejandra",
     "Calificacion": "N/A",
-    "Municipio": "Bogotá D.C.",
-    "Departamento": "Bogota"
+    "Municipio": "Villavicencio",
+    "Departamento": "Meta"
   },
   {
     "SDS": 20004,
