@@ -33,7 +33,7 @@ export default function App() {
     window.addEventListener("offline", handleOffline);
 
     // Forzar actualización de datos cuando cambia la versión
-    const DATA_VERSION = "v5_map_fix";
+    const DATA_VERSION = "v6_demo_camila";
     localforage.getItem("dataVersion").then((version) => {
       if (version !== DATA_VERSION) {
         // Datos obsoletos o primera carga: usar INITIAL_DATA
@@ -114,15 +114,24 @@ export default function App() {
       identificacion: "1010222333",
       telefono: "3007771111",
     },
+    {
+      username: "camilagarcia06",
+      password: "123456",
+      name: "Camila Garcia",
+      role: "Asesor",
+      email: "camila@proveedor.com",
+      identificacion: "12345678",
+      telefono: "3000000000",
+    },
   ]);
 
   const [asesores, setAsesores] = useState([
     {
       id: 1,
-      nombre: "Ana Asesora",
-      identificacion: "12345",
-      telefono: "3001234567",
-      email: "asesor@proveedor.com",
+      nombre: "Camila Garcia",
+      identificacion: "12345678",
+      telefono: "3000000000",
+      email: "camila@proveedor.com",
       empresa: "Prevención Integral S.A.S",
       cargo: "Asesor",
       licencia: "Res. 123 de 2023 | Exp: 12/05/2023",
@@ -204,7 +213,7 @@ export default function App() {
     if (userData.role === "Administrador del sistema") {
       setDirectorView("tableros");
       setCurrentScreen("directorDashboard");
-    } else if (userData.role === "Lider") {
+    } else if (userData.role === "Lider" || userData.role === "Asesor") {
       setCurrentScreen("leaderDashboard");
     } else {
       setCurrentScreen("main");
@@ -332,7 +341,7 @@ export default function App() {
     if (user?.role === "Administrador del sistema") {
       setDirectorView("tableros");
       setCurrentScreen("directorDashboard");
-    } else if (user?.role === "Lider") {
+    } else if (user?.role === "Lider" || user?.role === "Asesor") {
       setCurrentScreen("leaderDashboard");
     } else {
       setCurrentScreen("main");
@@ -350,7 +359,7 @@ export default function App() {
         resetFlow();
         return;
       }
-      if (user?.role === "Lider") {
+      if (user?.role === "Lider" || user?.role === "Asesor") {
         setCurrentScreen("leaderDashboard");
         resetFlow();
         return;
@@ -409,7 +418,7 @@ export default function App() {
           <LeaderDashboard
             onLogout={handleLogout}
             user={user}
-            sdsData={sdsData}
+            sdsData={user?.role === "Asesor" ? sdsData.filter(item => item.Proveedor === user.name || String(item.NitProveedor) === String(user.identificacion)) : sdsData}
             asesores={asesores}
             setAsesores={setAsesores}
             showModal={showModal}
